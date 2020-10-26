@@ -26,7 +26,7 @@ const paths = {
     watch: "src/assets/scss/**/*.scss",
   },
   html: {
-    src: "src/views/screens/*.pug",
+    src: "src/views/index.pug",
     dest: "build",
     watch: "src/views/**/*.pug",
   },
