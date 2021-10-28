@@ -1,7 +1,5 @@
 import { src, dest, series, watch } from "gulp";
 import del from "del";
-import bro from "gulp-bro";
-import babelify from "babelify";
 import sass from "gulp-sass";
 import postCss from "gulp-postcss";
 import autoprefixer from "autoprefixer";
@@ -10,15 +8,19 @@ import cleanCSS from "gulp-clean-css";
 import pug from "gulp-pug";
 import pugLinter from "gulp-pug-linter";
 import webserver from "gulp-webserver";
-import rename from "gulp-rename";
+import ts from "gulp-typescript";
 
 sass.compiler = compiler;
 
 const paths = {
-  js: {
-    src: "src/assets/js/main.js",
+  ts: {
+    src: "src/assets/ts/main.ts",
     dest: "build",
-    watch: "src/assets/js/**/*.js",
+    watch: "src/assets/ts/**/*.ts",
+  },
+  public: {
+    src: "src/assets/public/**/*",
+    dest: "build/public",
   },
   css: {
     src: "src/assets/scss/styles.scss",
@@ -37,17 +39,18 @@ const paths = {
 
 const clear = () => del("build");
 
-const js = () =>
-  src(paths.js.src)
+const tsToJs = () =>
+  src(paths.ts.src)
     .pipe(
-      bro({
-        transform: [
-          babelify.configure({ presets: ["@babel/preset-env"] }),
-          ["uglifyify", { global: true }],
-        ],
+      ts({
+        noImplicitAny: true,
+        outFile: "main.js",
       })
     )
-    .pipe(dest(paths.js.dest));
+    .pipe(dest(paths.ts.dest));
+
+const publicResource = () =>
+  src(paths.public.src).pipe(dest(paths.public.dest));
 
 const css = () =>
   src(paths.css.src)
@@ -63,7 +66,7 @@ const html = () =>
     .pipe(dest(paths.html.dest));
 
 const watchFiles = () => {
-  watch(paths.js.watch, js);
+  watch(paths.ts.watch, tsToJs);
   watch(paths.css.watch, css);
   watch(paths.html.watch, html);
 };
@@ -78,9 +81,17 @@ const server = () =>
     })
   );
 
-const devBundle = series([clear, js, css, html, server, watchFiles]);
+const devBundle = series([
+  clear,
+  tsToJs,
+  css,
+  html,
+  publicResource,
+  server,
+  watchFiles,
+]);
 
-const buildBundle = series([clear, js, css, html]);
+const buildBundle = series([clear, tsToJs, css, html, publicResource]);
 
 export const dev = devBundle;
 
